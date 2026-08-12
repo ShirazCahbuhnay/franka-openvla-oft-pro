@@ -1,0 +1,7 @@
+numpy>=1.23.5,<1.25
+tensorflow>=2.15,<2.16
+tensorflow-datasets>=4.9,<4.10
+tensorflow-metadata>=1.14,<1.16
+opencv-python>=4.8,<4.11
+protobuf>=3.20.3,<5
+setuptools<80

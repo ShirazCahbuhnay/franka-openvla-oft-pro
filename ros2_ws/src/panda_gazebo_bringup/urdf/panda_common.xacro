@@ -1,0 +1,75 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+  <xacro:property name="inertial_config" value="$(find panda_gazebo_bringup)/config/inertial.yaml"/>
+  <xacro:property name="inertial" value="${xacro.load_yaml(inertial_config)}"/>
+
+  <xacro:macro name="inertial_props" params="name inertial:=^">
+    <xacro:unless value="${name in inertial}">
+      ${xacro.warning('No inertia properties defined for: ' + name)}
+    </xacro:unless>
+    <xacro:if value="${name in inertial}">
+      <xacro:property name="link_inertial" value="${inertial[name]}" lazy_eval="false"/>
+      <inertial>
+        <origin rpy="${link_inertial.origin.rpy}" xyz="${link_inertial.origin.xyz}"/>
+        <mass value="${link_inertial.mass}"/>
+        <xacro:property name="I" value="${link_inertial.inertia}"/>
+        <inertia ixx="${I.xx}" ixy="${I.xy}" ixz="${I.xz}"
+                 iyy="${I.yy}" iyz="${I.yz}" izz="${I.zz}"/>
+      </inertial>
+    </xacro:if>
+  </xacro:macro>
+
+  <xacro:macro name="collision_capsule" params="radius length xyz:='0 0 0' direction:='z'">
+    <xacro:property name="roll_value" value="${pi / 2.0 if 'y' in direction else 0}"/>
+    <xacro:property name="pitch_value" value="${pi / 2.0 if 'x' in direction else 0}"/>
+    <xacro:property name="x_value" value="${xyz.split(' ')[0]}"/>
+    <xacro:property name="y_value" value="${xyz.split(' ')[1]}"/>
+    <xacro:property name="z_value" value="${xyz.split(' ')[2]}"/>
+    <xacro:property name="sx" value="${length / 2.0 if 'x' in direction else 0}"/>
+    <xacro:property name="sy" value="${length / 2.0 if 'y' in direction else 0}"/>
+    <xacro:property name="sz" value="${length / 2.0 if 'z' in direction else 0}"/>
+
+    <collision>
+      <origin xyz="${x_value} ${y_value} ${z_value}" rpy="${roll_value} ${pitch_value} 0"/>
+      <geometry>
+        <cylinder radius="${radius}" length="${length}"/>
+      </geometry>
+    </collision>
+    <collision>
+      <origin xyz="${x_value + sx} ${y_value + sy} ${z_value + sz}"/>
+      <geometry>
+        <sphere radius="${radius}"/>
+      </geometry>
+    </collision>
+    <collision>
+      <origin xyz="${x_value - sx} ${y_value - sy} ${z_value - sz}"/>
+      <geometry>
+        <sphere radius="${radius}"/>
+      </geometry>
+    </collision>
+  </xacro:macro>
+
+  <xacro:macro name="link_with_collision" params="name arm_id:='panda' description_pkg:='franka_description' **collision_geometries">
+    <link name="${arm_id}_${name}">
+      <visual>
+        <geometry>
+          <mesh filename="package://${description_pkg}/meshes/visual/${name}.dae"/>
+        </geometry>
+      </visual>
+      <xacro:insert_block name="collision_geometries"/>
+      <xacro:inertial_props name="${name}"/>
+    </link>
+  </xacro:macro>
+
+  <xacro:macro name="panda_limits" params="config name">
+    <xacro:property name="limits" value="${config[name]['limit']}" lazy_eval="false"/>
+    <limit lower="${limits.lower}"
+           upper="${limits.upper}"
+           effort="${limits.effort}"
+           velocity="${limits.velocity}"/>
+    <safety_controller k_position="100.0"
+                       k_velocity="40.0"
+                       soft_lower_limit="${limits.lower}"
+                       soft_upper_limit="${limits.upper}"/>
+  </xacro:macro>
+</robot>

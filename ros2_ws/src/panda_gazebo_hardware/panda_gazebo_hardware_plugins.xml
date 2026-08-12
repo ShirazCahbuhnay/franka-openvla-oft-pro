@@ -1,0 +1,10 @@
+<library path="panda_gazebo_hardware">
+  <class
+    name="panda_gazebo_hardware/PandaGravityCompensatedSystem"
+    type="panda_gazebo_hardware::PandaGravityCompensatedSystem"
+    base_class_type="gz_ros2_control::GazeboSimSystemInterface">
+    <description>
+      Panda-specific Gazebo ros2_control hardware plugin that applies gravity compensation in the hardware write path.
+    </description>
+  </class>
+</library>

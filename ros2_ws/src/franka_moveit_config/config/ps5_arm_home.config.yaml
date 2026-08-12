@@ -1,0 +1,13 @@
+ps5_arm_home_node:
+  ros__parameters:
+    joy_topic: joy
+    require_enable_button: true
+    enable_button: 9
+    
+    # Depending on your gamepad/driver, D-Pad Up is either an axis or a button.
+    # Set to -1 if it's not a button or axis.
+    home_button: 11          # Usually 11, 13, or 15 on some drivers
+    home_axis: 7             # Usually axis 7 on Linux generic joy
+    home_axis_sign: 1.0      # 1.0 for Up, -1.0 for Down
+
+    command_cooldown_sec: 1.0

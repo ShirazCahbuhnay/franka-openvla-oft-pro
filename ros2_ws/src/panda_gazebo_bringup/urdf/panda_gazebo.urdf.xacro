@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="utf-8"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="panda">
+  <xacro:arg name="arm_id" default="panda"/>
+  <xacro:arg name="hand" default="true"/>
+  <xacro:arg name="description_pkg" default="franka_description"/>
+  <xacro:arg name="xyz" default="0 0 0"/>
+  <xacro:arg name="rpy" default="0 0 0"/>
+  <xacro:arg name="joint_states_topic" default="/arm/joint_states"/>
+  <xacro:arg name="ros2_controllers_file"
+             default="$(find panda_gazebo_bringup)/config/ros2_controllers.yaml"/>
+
+  <xacro:property name="arm_id" value="$(arg arm_id)"/>
+  <xacro:property name="joint_limits"
+                  value="${xacro.load_yaml('$(find panda_gazebo_bringup)/config/joint_limits.yaml')}"/>
+
+  <xacro:include filename="$(find panda_gazebo_bringup)/urdf/panda_arm.xacro"/>
+  <xacro:include filename="$(find panda_gazebo_bringup)/urdf/hand.xacro"/>
+
+  <link name="world"/>
+  <joint name="world_joint" type="fixed">
+    <origin xyz="$(arg xyz)" rpy="$(arg rpy)"/>
+    <parent link="world"/>
+    <child link="${arm_id}_link0"/>
+  </joint>
+
+  <xacro:panda_arm_gazebo arm_id="${arm_id}"
+                          description_pkg="$(arg description_pkg)"
+                          safety_distance="0.03"
+                          joint_limits="${joint_limits}"/>
+
+  <xacro:if value="$(arg hand)">
+    <xacro:panda_hand_gazebo arm_id="${arm_id}"
+                             connected_to="${arm_id}_link8"
+                             description_pkg="$(arg description_pkg)"
+                             rpy="0 0 ${-pi / 4}"
+                             safety_distance="0.03"/>
+  </xacro:if>
+
+  <xacro:property name="tip_link"
+                  value="${arm_id + '_hand' if '$(arg hand)' == 'true' else arm_id + '_link8'}"/>
+
+  <ros2_control name="${arm_id}GazeboSimSystem" type="system">
+    <hardware>
+      <plugin>panda_gazebo_hardware/PandaGravityCompensatedSystem</plugin>
+      <param name="robot_description_node">robot_state_publisher</param>
+      <param name="robot_description_param">robot_description</param>
+      <param name="root_link">${arm_id}_link0</param>
+      <param name="tip_link">${tip_link}</param>
+      <param name="gravity_vector">0 0 -9.81</param>
+    </hardware>
+
+    <joint name="${arm_id}_joint1">
+      <command_interface name="effort"/>
+      <state_interface name="position">
+        <param name="initial_value">0.0</param>
+      </state_interface>
+      <state_interface name="velocity"/>
+      <state_interface name="effort"/>
+    </joint>
+    <joint name="${arm_id}_joint2">
+      <command_interface name="effort"/>
+      <state_interface name="position">
+        <param name="initial_value">${-pi / 4}</param>
+      </state_interface>
+      <state_interface name="velocity"/>
+      <state_interface name="effort"/>
+    </joint>
+    <joint name="${arm_id}_joint3">
+      <command_interface name="effort"/>
+      <state_interface name="position">
+        <param name="initial_value">0.0</param>
+      </state_interface>
+      <state_interface name="velocity"/>
+      <state_interface name="effort"/>
+    </joint>
+    <joint name="${arm_id}_joint4">
+      <command_interface name="effort"/>
+      <state_interface name="position">
+        <param name="initial_value">${-3 * pi / 4}</param>
+      </state_interface>
+      <state_interface name="velocity"/>
+      <state_interface name="effort"/>
+    </joint>
+    <joint name="${arm_id}_joint5">
+      <command_interface name="effort"/>
+      <state_interface name="position">
+        <param name="initial_value">0.0</param>
+      </state_interface>
+      <state_interface name="velocity"/>
+      <state_interface name="effort"/>
+    </joint>
+    <joint name="${arm_id}_joint6">
+      <command_interface name="effort"/>
+      <state_interface name="position">
+        <param name="initial_value">${pi / 2}</param>
+      </state_interface>
+      <state_interface name="velocity"/>
+      <state_interface name="effort"/>
+    </joint>
+    <joint name="${arm_id}_joint7">
+      <command_interface name="effort"/>
+      <state_interface name="position">
+        <param name="initial_value">${pi / 4}</param>
+      </state_interface>
+      <state_interface name="velocity"/>
+      <state_interface name="effort"/>
+    </joint>
+    <xacro:if value="$(arg hand)">
+      <joint name="${arm_id}_finger_joint1">
+        <command_interface name="position"/>
+        <state_interface name="position">
+          <param name="initial_value">0.026</param>
+        </state_interface>
+        <state_interface name="velocity"/>
+      </joint>
+
+      <joint name="${arm_id}_finger_joint2">
+        <command_interface name="position"/>
+        <state_interface name="position">
+          <param name="initial_value">0.026</param>
+        </state_interface>
+        <state_interface name="velocity"/>
+      </joint>
+    </xacro:if>
+  </ros2_control>
+
+  <gazebo>
+    <plugin filename="gz_ros2_control-system" name="gz_ros2_control::GazeboSimROS2ControlPlugin">
+      <robot_param>robot_description</robot_param>
+      <robot_param_node>robot_state_publisher</robot_param_node>
+      <parameters>$(arg ros2_controllers_file)</parameters>
+      <ros>
+        <remapping>/joint_states:=$(arg joint_states_topic)</remapping>
+      </ros>
+    </plugin>
+  </gazebo>
+</robot>

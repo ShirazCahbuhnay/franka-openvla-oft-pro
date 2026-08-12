@@ -1,0 +1,51 @@
+controller_manager:
+  ros__parameters:
+    update_rate: 1000  # Hz
+
+    joint_state_broadcaster:
+      type: joint_state_broadcaster/JointStateBroadcaster
+
+    panda_arm_controller:
+      type: joint_trajectory_controller/JointTrajectoryController
+
+    panda_hand_controller:
+      type: joint_trajectory_controller/JointTrajectoryController
+
+panda_arm_controller:
+  ros__parameters:
+    joints:
+      - panda_joint1
+      - panda_joint2
+      - panda_joint3
+      - panda_joint4
+      - panda_joint5
+      - panda_joint6
+      - panda_joint7
+    command_interfaces:
+      - effort
+    state_interfaces:
+      - position
+      - velocity
+    # MoveIt Servo streams short JointTrajectory segments whose terminal velocity
+    # can stay non-zero while the next segment is already on the way.
+    allow_nonzero_velocity_at_trajectory_end: true
+    gains:
+      panda_joint1: {p: 600.0, d: 30.0, i: 0.0, i_clamp: 1.0, ff_velocity_scale: 0.0}
+      panda_joint2: {p: 600.0, d: 30.0, i: 0.0, i_clamp: 1.0, ff_velocity_scale: 0.0}
+      panda_joint3: {p: 600.0, d: 30.0, i: 0.0, i_clamp: 1.0, ff_velocity_scale: 0.0}
+      panda_joint4: {p: 600.0, d: 30.0, i: 0.0, i_clamp: 1.0, ff_velocity_scale: 0.0}
+      panda_joint5: {p: 250.0, d: 10.0, i: 0.0, i_clamp: 1.0, ff_velocity_scale: 0.0}
+      panda_joint6: {p: 150.0, d: 10.0, i: 0.0, i_clamp: 1.0, ff_velocity_scale: 0.0}
+      panda_joint7: {p: 50.0, d: 5.0, i: 0.0, i_clamp: 1.0, ff_velocity_scale: 0.0}
+
+panda_hand_controller:
+  ros__parameters:
+    joints:
+      - panda_finger_joint1
+      - panda_finger_joint2
+    command_interfaces:
+      - position
+    state_interfaces:
+      - position
+      - velocity
+    allow_nonzero_velocity_at_trajectory_end: false

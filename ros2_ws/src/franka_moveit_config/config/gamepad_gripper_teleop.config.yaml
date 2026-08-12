@@ -1,0 +1,26 @@
+gamepad_gripper_teleop_node:
+  ros__parameters:
+    joy_topic: joy
+    gripper_ns: /panda_gripper
+    require_enable_button: true
+    enable_button: 9
+
+    button:
+      close: 0
+      stop: 1
+      open: 2
+      homing: 3
+
+    open:
+      width: 0.08
+      speed: 0.05
+
+    close:
+      width: 0.0
+      speed: 0.03
+      force: 20.0
+      epsilon_inner: 0.005
+      epsilon_outer: 0.08
+
+    command_cooldown_sec: 0.25
+    log_results: true

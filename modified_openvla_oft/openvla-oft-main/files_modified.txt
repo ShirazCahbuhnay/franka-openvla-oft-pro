@@ -1,0 +1,95 @@
+ 1. configs.py
+  File:
+
+  openvla-oft-main/prismatic/vla/datasets/rlds/oxe/configs.py
+
+  We added this dataset config:
+
+  "franka_vla": {
+      "image_obs_keys": {
+          "primary": "image",
+          "secondary": None,
+          "wrist": None,
+      },
+      "depth_obs_keys": {
+          "primary": None,
+          "secondary": None,
+          "wrist": None,
+      },
+      "state_obs_keys": ["state"],
+      "state_encoding": StateEncoding.POS_EULER,
+      "action_encoding": ActionEncoding.EEF_POS,
+  },
+
+  Meaning:
+
+  - the main camera image is stored at: observation/image
+
+  - do not have secondary or wrist cameras
+  - do not have depth images
+  - proprio/state is stored at: observation/state
+
+  - state format is position + Euler orientation:
+
+  [x, y, z, roll, pitch, yaw, 0.0, gripper_width]
+
+  - action format is end-effector delta pose + gripper:
+
+  [dx, dy, dz, droll, dpitch, dyaw, gripper]
+
+  That is why we use:ActionEncoding.EEF_POS
+
+  2. transforms.py
+  File:
+
+  openvla-oft-main/prismatic/vla/datasets/rlds/oxe/transforms.py
+
+  Added:
+
+  def franka_vla_dataset_transform(trajectory):return trajectory
+
+  and registered it:
+
+  "franka_vla": franka_vla_dataset_transform,
+
+  Meaning:
+
+  The RLDS dataset is already in the right structure, so OpenVLA-OFT does not
+  need to rename fields or reshape values.
+
+  Some other datasets need transforms because their image/action/state field
+  names are different. The dataset already has the expected fields after our converter
+  changes.
+
+  3. mixtures.py
+  File:
+
+  openvla-oft-main/prismatic/vla/datasets/rlds/oxe/mixtures.py
+
+  added:
+
+  "franka_vla": [
+      ("franka_vla", 1.0),
+  ],
+
+  Meaning:
+
+  When you pass:
+
+  --dataset_name franka_vla
+
+  OpenVLA-OFT knows this training mixture contains your franka_vla dataset with
+  sampling weight 1.0.
+
+  This is useful because OpenVLA-OFT’s training code expects a “dataset mixture”
+  name, not just a raw TFDS folder.
+
+  In short:
+
+  configs.py    tells OpenVLA-OFT what fields your dataset has
+  transforms.py tells OpenVLA-OFT how to standardize it
+  mixtures.py   lets --dataset_name franka_vla work
+
+  Tje dataset loading test confirmed the TFDS side works. The training failure
+  happened later because the 7B model does not fit in the laptop GPU VRAM, not
+  because of these dataset registry changes.

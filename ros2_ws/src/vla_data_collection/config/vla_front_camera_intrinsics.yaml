@@ -1,0 +1,26 @@
+image_width: 1920
+image_height: 1080
+camera_name: vla_front_camera
+camera_matrix:
+  rows: 3
+  cols: 3
+  data: [671.01781,   0.     , 934.60531,
+           0.     , 670.40807, 592.57217,
+           0.     ,   0.     ,   1.     ]
+distortion_model: plumb_bob
+distortion_coefficients:
+  rows: 1
+  cols: 5
+  data: [-0.002018, -0.012878, 0.000577, 0.000296, 0.000000]
+rectification_matrix:
+  rows: 3
+  cols: 3
+  data: [1., 0., 0.,
+         0., 1., 0.,
+         0., 0., 1.]
+projection_matrix:
+  rows: 3
+  cols: 4
+  data: [615.46216,   0.     , 923.28568,   0.     ,
+           0.     , 664.54095, 594.16081,   0.     ,
+           0.     ,   0.     ,   1.     ,   0.     ]

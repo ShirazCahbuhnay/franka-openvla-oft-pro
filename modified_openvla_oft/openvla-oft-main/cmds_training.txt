@@ -1,0 +1,91 @@
+torchrun --standalone --nnodes 1 --nproc-per-node 1 vla-scripts/finetune.py \
+      --vla_path openvla/openvla-7b \
+      --data_root_dir ~/Dataset/OpenVLA_TFDS \
+      --dataset_name franka_vla \
+      --run_root_dir ./runs \
+      --use_l1_regression True \
+      --use_diffusion False \
+      --use_film False \
+      --num_images_in_input 1 \
+      --use_proprio True \
+      --batch_size 8 \
+      --learning_rate 5e-4 \
+      --num_steps_before_decay 5\
+      --max_steps 10 \
+      --save_freq 10 \
+      --save_latest_checkpoint_only False \
+      --image_aug True \
+      --lora_rank 32 \
+      --run_id_note franka_vla_smoke_test
+
+
+
+torchrun --standalone --nnodes 1 --nproc-per-node 1
+  Runs distributed PyTorch locally with one machine and one process/GPU. Chosen because you are testing on one laptop.
+
+  vla-scripts/finetune.py
+  The OpenVLA-OFT fine-tuning script.
+
+  --vla_path openvla/openvla-7b
+  Loads the base OpenVLA 7B model from Hugging Face. Chosen because OpenVLA-OFT fine-tunes from the base OpenVLA checkpoint.
+
+  --data_root_dir .../OpenVLA_TFDS
+  Folder containing franka_vla/1.0.0. This must be the TFDS root, not the 1.0.0 folder.
+
+  --dataset_name franka_vla
+  Tells OpenVLA-OFT which registered dataset/mixture to use. Chosen to match your converted RLDS dataset name.
+
+  --run_root_dir ./runs
+  Where training outputs/checkpoints/logs are saved.
+
+  --use_l1_regression True
+  Uses direct L1 regression for continuous actions. This is the simpler OpenVLA-OFT action head path and good for a first test.
+
+  --use_diffusion False
+  Disables diffusion action prediction. Chosen to keep the first setup simpler and lighter.
+
+  --use_film False
+  Disables FiLM conditioning. Chosen because you are using one image stream and proprio only.
+
+  --num_images_in_input 1
+  Your RLDS dataset has one camera image: observation/image.
+
+  --use_proprio True
+  Uses your 8-D observation/state vector. Chosen because your dataset includes state/proprio and OpenVLA-OFT constants match PROPRIO_DIM = 8.
+
+  --batch_size 1
+  Smallest batch size. 1 for 24GB, 4 for 40GB, 8 for 80GB.
+
+  --learning_rate 5e-4
+  Common LoRA fine-tuning learning rate used in many VLA fine-tuning setups. Fine for a smoke test, not necessarily final.
+
+  --max_steps 10
+  Only trains for 10 steps. Choose based on the total number of steps in the dataset.
+
+  --save_freq 10
+  Saves at step 10. Choose roughly 1/4th of total steps
+
+  --image_aug True
+  Enables image augmentation. Usually useful for robot vision generalization; okay to keep on.
+
+  --lora_rank 32
+  Controls LoRA adapter capacity. 32 is a typical moderate value for fine-tuning without updating the full 7B model.
+
+  --run_id_note franka_vla_smoke_test
+  Just a label for the run name/logs. It helps identify this as a test run.
+
+  --save_latest_checkpoint_only False
+  Keep multiple checkpoints instead of overwriting/deleting older ones
+
+
+OPTIONAL
+
+ --wandb_project franka-openvla-oft
+
+  Then all Franka fine-tuning runs appear under one project.
+
+  --wandb_entity is useful if you have multiple accounts/teams. For example:
+
+  --wandb_entity my_lab_name
+
+  so the run logs go to your lab/team workspace instead of your personal account.
