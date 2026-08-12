@@ -79,44 +79,30 @@ stores the run under `./runs`.
 ```bash
 export WANDB_MODE=offline
 
-torchrun --standalone --nnodes 1 --nproc-per-node 1 vla-scripts/finetune.py \
-  --vla_path openvla/openvla-7b \
-  --data_root_dir ~/Dataset/Tensorflow \
-  --dataset_name franka_vla \
-  --run_root_dir ./runs \
-  --use_l1_regression True \
-  --use_diffusion False \
-  --use_film False \
-  --num_images_in_input 1 \
-  --use_proprio True \
-  --batch_size 8 \
-  --grad_accumulation_steps 1 \
-  --learning_rate 5e-4 \
-  --num_steps_before_decay 300 \
-  --max_steps 450 \
-  --save_freq 150 \
-  --save_latest_checkpoint_only False \
-  --merge_lora_during_training True \
-  --shuffle_buffer_size 200 \
-  --image_aug True \
-  --lora_rank 32 \
-  --lora_dropout 0.0 \
-  --run_id_note franka_vla
+  torchrun --standalone --nnodes 1 --nproc-per-node 3 vla-scripts/finetune.py \
+    --vla_path openvla/openvla-7b \
+    --data_root_dir ./Dataset/Tensorflow \
+    --dataset_name franka_vla \
+    --run_root_dir ./runs \
+    --use_l1_regression True \
+    --use_diffusion False \
+    --use_film False \
+    --num_images_in_input 1 \
+    --use_proprio True \
+    --batch_size 8 \
+    --grad_accumulation_steps 1 \
+    --learning_rate 5e-4 \
+    --num_steps_before_decay 20000 \
+    --max_steps 28800 \
+    --save_freq 2880 \
+    --save_latest_checkpoint_only False \
+    --merge_lora_during_training False \
+    --shuffle_buffer_size 13150 \
+    --image_aug True \
+    --lora_rank 32 \
+    --lora_dropout 0 \
+    --run_id_note franka_vla_v1
 ```
-
-### Settings at a Glance
-
-| Setting | Value |
-| --- | ---: |
-| Dataset | `franka_vla` |
-| Batch size | `8` |
-| Gradient accumulation | `1` step |
-| Learning rate | `5e-4` |
-| Learning-rate decay starts | Step `300` |
-| Training ends | Step `450` |
-| Checkpoint interval | Every `150` steps |
-| LoRA rank | `32` |
-| W&B mode | Offline |
 
 ## Prepare a Checkpoint for Deployment
 
@@ -177,15 +163,15 @@ conda activate openvla-oft
 python vla-scripts/deploy.py \
   --host 0.0.0.0 \
   --port 8777 \
-  --pretrained_checkpoint moojink/openvla-7b-oft-finetuned-libero-spatial \
+  --pretrained_checkpoint ~/openvla-oft-main_modified_for_RLDS/openvla-oft-main/runs/<YOUR_CHECKPOINT_DIR> \
   --use_l1_regression True \
   --use_diffusion False \
   --use_film False \
-  --num_images_in_input 2 \
+  --num_images_in_input 1 \
   --use_proprio True \
   --center_crop True \
   --lora_rank 32 \
-  --unnorm_key libero_spatial_no_noops
+  --unnorm_key franka_vla
 ```
 
 ### Terminal 3 — Start the ROS 2 Bridge
@@ -199,11 +185,15 @@ cd ~/franka_ros2_ws
 source install/setup.bash
 
 ros2 run vla_data_collection openvla_oft_inference_node_more_action --ros-args \
-  -p dry_run:=true \
   -p server_url:=http://127.0.0.1:8777/act \
+  -p dry_run:=true \
+  -p query_period_sec:=0.35 \
+  -p command_duration_sec:=0.20 \
   -p num_open_loop_steps:=4 \
-  -p duplicate_primary_as_wrist:=true \
-  -p initial_instruction:="pick up the blue cube"
+  -p max_linear_speed_mps:=0.05 \
+  -p max_angular_speed_rps:=0.35 \
+  -p duplicate_primary_as_wrist:=false \
+  -p initial_instruction:="pick up the blue cube" 
 ```
 
 #### Live Control
@@ -215,9 +205,51 @@ cd ~/franka_ros2_ws
 source install/setup.bash
 
 ros2 run vla_data_collection openvla_oft_inference_node_more_action --ros-args \
-  -p dry_run:=false \
   -p server_url:=http://127.0.0.1:8777/act \
+  -p dry_run:=false \
+  -p query_period_sec:=0.35 \
+  -p command_duration_sec:=0.20 \
   -p num_open_loop_steps:=4 \
-  -p duplicate_primary_as_wrist:=true \
-  -p initial_instruction:="pick up the blue cube"
+  -p max_linear_speed_mps:=0.05 \
+  -p max_angular_speed_rps:=0.35 \
+  -p duplicate_primary_as_wrist:=false \
+  -p initial_instruction:="pick up the blue cube" 
 ```
+
+These are the default values for all possible arguments:
+
+```text
+server_url                       http://127.0.0.1:8777/act
+request_timeout_sec              10.0
+dry_run                          true
+camera_topic                     /vla_front_camera/image_raw
+camera_compressed                false
+joint_states_topic               /joint_states
+robot_state_topic                /franka_robot_state_broadcaster/robot_state
+instruction_topic                /vla/language_instruction
+initial_instruction              ""
+servo_topic                      /servo_node/delta_twist_cmds
+gripper_action_name              /panda_gripper/move
+command_frame                    panda_link0
+query_period_sec                 1.0
+servo_publish_period_sec         0.034
+command_duration_sec             0.20
+num_open_loop_steps              4
+arm_action_mode                  integrated_delta
+gripper_action_mode              absolute_binary
+max_gripper_width_m              0.08
+gripper_speed_mps                0.04
+gripper_open_threshold           0.5
+gripper_command_epsilon_m        0.004
+gripper_command_cooldown_sec     0.50
+max_linear_speed_mps             0.05
+max_angular_speed_rps            0.20
+image_size                       224
+center_crop_image                true
+duplicate_primary_as_wrist       false
+max_image_age_sec                2.0
+max_robot_state_age_sec          2.0
+log_every_action                 true
+log_full_action_chunk            true
+```
+The only parameter that must become non-empty before inference starts is the instruction, either through initial_instruction or a message on /vla/language_instruction.
